@@ -41,6 +41,21 @@ bundle plugin install bundler-vivarium --git file:///path/to/bundler-vivarium --
 
    and, on Bundler exit, the Vivarium process-tree report covering the install.
 
+### Filtering events
+
+By default every event type is reported, **except `path_open`, which is limited to files under `/etc` and `/proc`** to cut down on noise during installs.
+
+To restrict the report to specific event types, set `BUNDLER_VIVARIUM_EVENTS` to a comma-separated list of event names:
+
+```bash
+# only show outgoing connections, DNS queries, and process execs
+BUNDLER_VIVARIUM_EVENTS=sock_connect,dns_req,proc_exec bundle install
+```
+
+When `path_open` is included in the list, it is still limited to the `/etc` and `/proc` default. Event names match Vivarium's event names (`path_open`, `proc_exec`, `sock_connect`, `dns_req`, `file_symlink`, `capable_check`, etc.).
+
+### Disabling
+
 To temporarily disable the audit without removing the plugin, set:
 
 ```bash
