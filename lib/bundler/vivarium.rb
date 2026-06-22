@@ -66,8 +66,8 @@ module Bundler
         events = parse_events(ENV[EVENTS_ENV])
         if events.empty?
           nil
-        else 
-          { events: events }
+        else
+          { include_events: events }
         end
       end
 
@@ -77,21 +77,13 @@ module Bundler
         raw.split(",").map(&:strip).reject(&:empty?)
       end
 
-      # `path_open` targets are rendered via String#inspect (e.g. "/etc/passwd"),
-      # so allow an optional leading quote and require one of the prefixes at the
-      # start of the path.
-      def path_open_default_pattern
-        alternation = PATH_OPEN_DEFAULT_PREFIXES.map { |p| Regexp.escape(p) }.join("|")
-        %r{\A"?(?:#{alternation})(?:/|"|\z)}
-      end
-
       def announce(dependencies, filter)
         names = Array(dependencies).map { |dep| dep.respond_to?(:name) ? dep.name : dep.to_s }
         info_ui("auditing bundle install of #{names.size} gem(s) via Vivarium")
         info_ui("gems: #{names.sort.join(', ')}") unless names.empty?
 
-        if filter&.key?(:events)
-          info_ui("event filter: #{filter[:events].join(', ')}")
+        if filter&.key?(:include_events)
+          info_ui("event filter: #{filter[:include_events].join(', ')}")
         else
           info_ui("event filter: default vivarium events)")
         end
