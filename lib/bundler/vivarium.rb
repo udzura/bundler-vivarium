@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "vivarium/version"
+require "bundler/vivarium/version"
 
 module Bundler
   # Bundler plugin that audits `bundle install` behavior using the Vivarium
@@ -17,10 +17,6 @@ module Bundler
     # Comma-separated list of event names to display (e.g. "path_open,sock_connect").
     # When unset, every event type is shown (subject to the path_open default below).
     EVENTS_ENV = "BUNDLER_VIVARIUM_EVENTS"
-
-    # By default `path_open` is very noisy during an install, so it is limited to
-    # files under these prefixes unless the user opts into more via EVENTS_ENV.
-    PATH_OPEN_DEFAULT_PREFIXES = %w[/etc /proc].freeze
 
     class << self
       # Registers the Bundler hook. Called from the gem's plugins.rb when the
@@ -44,7 +40,11 @@ module Bundler
 
         filter = build_filter
         announce(dependencies, filter)
-        @session = ::Vivarium.observe(filter: filter)
+        @session = if filter
+                     ::Vivarium.observe(filter: filter)
+                   else
+                     ::Vivarium.observe
+                   end
       rescue LoadError => e
         warn_ui("vivarium library is not available, skipping audit: #{e.message}")
         nil
@@ -63,10 +63,12 @@ module Bundler
       # Builds the Vivarium display filter. `path_open` is always limited to the
       # default prefixes; other events are shown unless EVENTS_ENV narrows the set.
       def build_filter
-        filter = { payload: { "path_open" => path_open_default_pattern } }
         events = parse_events(ENV[EVENTS_ENV])
-        filter[:events] = events unless events.empty?
-        filter
+        if events.empty?
+          nil
+        else 
+          { events: events }
+        end
       end
 
       def parse_events(raw)
@@ -88,10 +90,10 @@ module Bundler
         info_ui("auditing bundle install of #{names.size} gem(s) via Vivarium")
         info_ui("gems: #{names.sort.join(', ')}") unless names.empty?
 
-        if filter[:events]
+        if filter&.key?(:events)
           info_ui("event filter: #{filter[:events].join(', ')}")
         else
-          info_ui("event filter: all events (path_open limited to #{PATH_OPEN_DEFAULT_PREFIXES.join(', ')})")
+          info_ui("event filter: default vivarium events)")
         end
       end
 

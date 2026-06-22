@@ -8,8 +8,4 @@ class Bundler::VivariumTest < Test::Unit::TestCase
       ::Bundler::Vivarium.const_defined?(:VERSION)
     end
   end
-
-  test "something useful" do
-    assert_equal("expected", "actual")
-  end
 end
